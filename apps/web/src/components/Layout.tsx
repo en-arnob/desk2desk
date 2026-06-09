@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
   Building2,
@@ -21,7 +21,6 @@ interface NavItem {
   to: string;
   label: string;
   icon: typeof Inbox;
-  end?: boolean;
 }
 
 interface NavSection {
@@ -40,7 +39,7 @@ const SECTIONS: NavSection[] = [
         icon: LayoutDashboard,
       },
       { to: '/history', label: 'Support History', icon: History },
-      { to: '/requests', label: 'My Requests', icon: Inbox, end: true },
+      { to: '/requests', label: 'My Requests', icon: Inbox },
       { to: '/requests/new', label: 'New Request', icon: PlusCircle },
     ],
   },
@@ -70,6 +69,7 @@ function initials(name?: string) {
 export function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   function handleLogout() {
     logout();
@@ -77,6 +77,15 @@ export function Layout() {
   }
 
   const isSupportPerson = !!user?.isProvider;
+
+  // Highlight the most specific nav item for the current path. A child URL
+  // with no nav entry of its own (e.g. /requests/1) falls back to its parent
+  // (/requests) — whichever item's `to` is the longest matching prefix wins.
+  const activeTo = SECTIONS.flatMap((s) => s.items)
+    .filter(
+      (it) => pathname === it.to || pathname.startsWith(`${it.to}/`),
+    )
+    .sort((a, b) => b.to.length - a.to.length)[0]?.to;
 
   return (
     <div className="flex min-h-screen bg-secondary/30">
@@ -106,15 +115,12 @@ export function Layout() {
                     <NavLink
                       key={item.to}
                       to={item.to}
-                      end={item.end}
-                      className={({ isActive }) =>
-                        cn(
-                          'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                          isActive
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-                        )
-                      }
+                      className={cn(
+                        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                        item.to === activeTo
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                      )}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       {item.label}
