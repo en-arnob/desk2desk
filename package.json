@@ -1,0 +1,19 @@
+{
+  "name": "desk2desk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Internal inter-department IT support platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace @desk2desk/shared",
+    "dev:api": "npm run start:dev --workspace @desk2desk/api",
+    "dev:web": "npm run dev --workspace @desk2desk/web",
+    "build": "npm run build:shared && npm run build --workspace @desk2desk/api && npm run build --workspace @desk2desk/web"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
