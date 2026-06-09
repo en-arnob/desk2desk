@@ -60,30 +60,65 @@ export function StatCard({
   );
 }
 
-/** Compact, low-chrome stat tile for dense summary rows. */
+export type StatTone =
+  | 'brand'
+  | 'blue'
+  | 'green'
+  | 'amber'
+  | 'violet'
+  | 'rose'
+  | 'muted';
+
+const TONE_STYLES: Record<StatTone, { card: string; icon: string }> = {
+  brand: { card: 'border-primary/20 bg-primary/5', icon: 'bg-primary/15 text-primary' },
+  blue: { card: 'border-blue-200 bg-blue-50', icon: 'bg-blue-500/15 text-blue-600' },
+  green: { card: 'border-emerald-200 bg-emerald-50', icon: 'bg-emerald-500/15 text-emerald-600' },
+  amber: { card: 'border-amber-200 bg-amber-50', icon: 'bg-amber-500/15 text-amber-600' },
+  violet: { card: 'border-violet-200 bg-violet-50', icon: 'bg-violet-500/15 text-violet-600' },
+  rose: { card: 'border-rose-200 bg-rose-50', icon: 'bg-rose-500/15 text-rose-600' },
+  muted: { card: 'bg-card', icon: 'bg-secondary text-muted-foreground' },
+};
+
+/** Colored stat tile with an icon box, value, and label. */
 export function MiniStat({
+  icon: Icon,
   label,
   value,
   sub,
-  accent,
+  tone = 'muted',
 }: {
+  icon?: LucideIcon;
   label: string;
   value: string | number;
   sub?: string;
-  accent?: boolean;
+  tone?: StatTone;
 }) {
+  const t = TONE_STYLES[tone];
   return (
-    <div className="rounded-lg border bg-card px-4 py-3">
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      <div
-        className={cn(
-          'mt-1 text-xl font-semibold tabular-nums leading-none',
-          accent && 'text-primary',
+    <div className={cn('rounded-xl border p-4 shadow-sm', t.card)}>
+      <div className="flex items-center gap-3">
+        {Icon && (
+          <span
+            className={cn(
+              'flex h-11 w-11 shrink-0 items-center justify-center rounded-lg',
+              t.icon,
+            )}
+          >
+            <Icon className="h-5 w-5" />
+          </span>
         )}
-      >
-        {value}
+        <div className="min-w-0">
+          <div className="text-2xl font-bold tabular-nums leading-none">
+            {value}
+          </div>
+          <div className="mt-1.5 text-xs font-medium text-muted-foreground">
+            {label}
+          </div>
+        </div>
       </div>
-      {sub && <div className="mt-1 text-[11px] text-muted-foreground">{sub}</div>}
+      {sub && (
+        <div className="mt-2 text-[11px] text-muted-foreground">{sub}</div>
+      )}
     </div>
   );
 }

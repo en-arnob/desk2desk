@@ -1,6 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FolderKanban, Layers, Users } from 'lucide-react';
+import {
+  AlarmClock,
+  BookOpen,
+  CalendarPlus,
+  CalendarRange,
+  CheckCircle2,
+  CircleDot,
+  FolderKanban,
+  Layers,
+  Loader2,
+  Timer,
+  Users,
+  UserCheck,
+} from 'lucide-react';
 import { DashboardStats, RequestStatus } from '@desk2desk/shared';
 import { apiGet } from '@/lib/api';
 import {
@@ -12,10 +25,12 @@ import {
 } from '@/components/StatsUI';
 import { Loader } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
+import { StatisticsKnowledge } from '@/components/StatisticsKnowledge';
 
 export function AdminStatsPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
 
   useEffect(() => {
     apiGet<DashboardStats>('/requests/stats')
@@ -37,43 +52,82 @@ export function AdminStatsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Statistics</h1>
-        <p className="text-sm text-muted-foreground">
-          Organization-wide support activity.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Statistics</h1>
+          <p className="text-sm text-muted-foreground">
+            Organization-wide support activity.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => setKnowledgeOpen(true)}>
+          <BookOpen className="h-4 w-4" /> Knowledge
+        </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <MiniStat label="Total requests" value={admin.totalRequests} accent />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <MiniStat
-          label="Open backlog"
-          value={admin.openBacklog}
-          sub={`${admin.unassignedOpen} unassigned`}
+          icon={Layers}
+          tone="brand"
+          label="Total requests"
+          value={admin.totalRequests}
         />
         <MiniStat
+          icon={AlarmClock}
+          tone="amber"
+          label="Open backlog"
+          value={admin.openBacklog}
+        />
+        <MiniStat
+          icon={CheckCircle2}
+          tone="green"
           label="Resolved + Closed"
           value={admin.byStatus.RESOLVED + admin.byStatus.CLOSED}
         />
         <MiniStat
+          icon={Timer}
+          tone="blue"
           label="Avg response"
           value={formatDuration(admin.avgResponseMinutes)}
         />
         <MiniStat
+          icon={Timer}
+          tone="violet"
           label="Avg resolution"
           value={formatDuration(admin.avgResolutionMinutes)}
         />
         <MiniStat
+          icon={UserCheck}
+          tone="brand"
           label="Active providers"
           value={admin.activeProviders}
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MiniStat label="Created today" value={admin.createdToday} />
-        <MiniStat label="Created this week" value={admin.createdThisWeek} />
-        <MiniStat label="In progress" value={admin.byStatus.IN_PROGRESS} />
-        <MiniStat label="Open" value={admin.byStatus.OPEN} />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MiniStat
+          icon={CalendarPlus}
+          tone="blue"
+          label="Created today"
+          value={admin.createdToday}
+        />
+        <MiniStat
+          icon={CalendarRange}
+          tone="violet"
+          label="Created this week"
+          value={admin.createdThisWeek}
+        />
+        <MiniStat
+          icon={Loader2}
+          tone="violet"
+          label="In progress"
+          value={admin.byStatus.IN_PROGRESS}
+        />
+        <MiniStat
+          icon={CircleDot}
+          tone="blue"
+          label="Open"
+          value={admin.byStatus.OPEN}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -126,6 +180,11 @@ export function AdminStatsPage() {
           <Link to="/admin/workload">View workload →</Link>
         </Button>
       </div>
+
+      <StatisticsKnowledge
+        open={knowledgeOpen}
+        onClose={() => setKnowledgeOpen(false)}
+      />
     </div>
   );
 }
