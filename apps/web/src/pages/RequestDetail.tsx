@@ -8,10 +8,12 @@ import {
 } from '@desk2desk/shared';
 import { ApiError, apiGet, apiPost } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PriorityBadge, StatusBadge } from '@/components/StatusBadge';
+import { Loader } from '@/components/Logo';
 import { ArrowLeft } from 'lucide-react';
 
 interface Action {
@@ -129,8 +131,10 @@ export function RequestDetailPage() {
   }
 
   if (!req || !user) {
-    return (
-      <p className="text-muted-foreground">{error ?? 'Loading…'}</p>
+    return error ? (
+      <p className="text-muted-foreground">{error}</p>
+    ) : (
+      <Loader />
     );
   }
 
@@ -191,17 +195,37 @@ export function RequestDetailPage() {
               {(req.comments ?? []).length === 0 && (
                 <p className="text-sm text-muted-foreground">No messages yet.</p>
               )}
-              {(req.comments ?? []).map((c) => (
-                <div key={c.id} className="rounded-md border bg-secondary/30 p-3">
-                  <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {c.author.name}
+              {(req.comments ?? []).map((c) => {
+                const mine = c.author.id === user.id;
+                return (
+                  <div
+                    key={c.id}
+                    className={cn(
+                      'flex flex-col',
+                      mine ? 'items-end' : 'items-start',
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'max-w-[85%] rounded-2xl px-3.5 py-2 text-sm',
+                        mine
+                          ? 'rounded-br-sm bg-primary text-primary-foreground'
+                          : 'rounded-bl-sm border bg-secondary/40',
+                      )}
+                    >
+                      {!mine && (
+                        <div className="mb-0.5 text-xs font-medium text-muted-foreground">
+                          {c.author.name}
+                        </div>
+                      )}
+                      <p className="whitespace-pre-wrap">{c.body}</p>
+                    </div>
+                    <span className="mt-1 px-1 text-[11px] text-muted-foreground">
+                      {mine ? 'You' : c.author.name} · {fmt(c.createdAt)}
                     </span>
-                    <span>{fmt(c.createdAt)}</span>
                   </div>
-                  <p className="whitespace-pre-wrap text-sm">{c.body}</p>
-                </div>
-              ))}
+                );
+              })}
               <form onSubmit={submitComment} className="space-y-2 pt-2">
                 <Textarea
                   value={comment}

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { Role } from '@desk2desk/shared';
 import { useAuth } from './lib/auth';
 import { Layout } from './components/Layout';
+import { Loader } from './components/Logo';
 import { LoginPage } from './pages/Login';
 import { NewRequestPage } from './pages/NewRequest';
 import { MyRequestsPage } from './pages/MyRequests';
@@ -24,11 +25,7 @@ function Protected({
 }) {
   const { user, loading } = useAuth();
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center text-muted-foreground">
-        Loading…
-      </div>
-    );
+    return <Loader fullscreen />;
   }
   if (!user) return <Navigate to="/login" replace />;
   if (roles && !roles.includes(user.role)) {

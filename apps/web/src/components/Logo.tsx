@@ -1,3 +1,4 @@
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -17,6 +18,36 @@ export function PremierMark({ className }: { className?: string }) {
       <rect x="32" y="0" width="26" height="26" rx="4" />
       <rect x="0" y="32" width="26" height="26" rx="4" />
     </svg>
+  );
+}
+
+/**
+ * Loading indicator: a classic spinner. Pass a `label` to show text beneath,
+ * and `fullscreen` to center it in the viewport.
+ */
+export function Loader({
+  label = 'Loading…',
+  fullscreen = false,
+  className,
+}: {
+  label?: string | null;
+  fullscreen?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center gap-3',
+        fullscreen ? 'min-h-screen' : 'py-12',
+        className,
+      )}
+      role="status"
+    >
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      {label && (
+        <span className="text-sm text-muted-foreground">{label}</span>
+      )}
+    </div>
   );
 }
 

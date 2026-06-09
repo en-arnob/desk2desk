@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Loader } from '@/components/Logo';
 
 export function AdminDepartmentsPage() {
   const [departments, setDepartments] = useState<DepartmentDto[]>([]);
@@ -15,9 +16,12 @@ export function AdminDepartmentsPage() {
   const [editName, setEditName] = useState('');
   const [toDelete, setToDelete] = useState<DepartmentDto | null>(null);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   function load() {
-    apiGet<DepartmentDto[]>('/admin/departments').then(setDepartments);
+    apiGet<DepartmentDto[]>('/admin/departments')
+      .then(setDepartments)
+      .finally(() => setLoading(false));
   }
   useEffect(load, []);
 
@@ -81,6 +85,13 @@ export function AdminDepartmentsPage() {
         </div>
       )}
 
+      {loading ? (
+        <Loader />
+      ) : departments.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+          No departments yet.
+        </div>
+      ) : (
       <div className="space-y-2">
         {departments.map((d) => (
           <Card key={d.id}>
@@ -140,6 +151,7 @@ export function AdminDepartmentsPage() {
           </Card>
         ))}
       </div>
+      )}
 
       <ConfirmDialog
         open={!!toDelete}

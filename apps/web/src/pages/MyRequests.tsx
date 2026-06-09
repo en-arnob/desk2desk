@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { RequestDto } from '@desk2desk/shared';
 import { apiGet } from '@/lib/api';
 import { RequestRow } from '@/components/RequestRow';
+import { Loader } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 
@@ -33,7 +34,7 @@ export function MyRequestsPage() {
       </div>
 
       {loading ? (
-        <p className="text-muted-foreground">Loading…</p>
+        <Loader />
       ) : requests.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
           You haven&apos;t raised any requests yet.

@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Loader } from '@/components/Logo';
 
 type RoleFilter = 'ALL' | Role;
 
@@ -47,13 +48,16 @@ export function AdminUsersPage() {
   const [toDelete, setToDelete] = useState<UserDto | null>(null);
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL');
   const [deptFilter, setDeptFilter] = useState<string>('ALL');
 
   function load() {
-    apiGet<UserDto[]>('/admin/users').then(setUsers);
+    apiGet<UserDto[]>('/admin/users')
+      .then(setUsers)
+      .finally(() => setLoading(false));
   }
   useEffect(() => {
     load();
@@ -190,7 +194,13 @@ export function AdminUsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filtered.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={4}>
+                    <Loader />
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td
                     colSpan={4}

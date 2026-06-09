@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PriorityBadge, StatusBadge } from '@/components/StatusBadge';
+import { Loader } from '@/components/Logo';
 
 function pad(n: number) {
   return String(n).padStart(2, '0');
@@ -131,11 +132,13 @@ export function SupportHistoryPage() {
         </div>
       </form>
 
-      <div className="text-sm text-muted-foreground">
-        {loading
-          ? 'Loading…'
-          : `${items.length} request${items.length === 1 ? '' : 's'} handled ${rangeLabel}.`}
-      </div>
+      {!loading && (
+        <div className="text-sm text-muted-foreground">
+          {`${items.length} request${items.length === 1 ? '' : 's'} handled ${rangeLabel}.`}
+        </div>
+      )}
+
+      {loading && <Loader />}
 
       {!loading &&
         (items.length === 0 ? (

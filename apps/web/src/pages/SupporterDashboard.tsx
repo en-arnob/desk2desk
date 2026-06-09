@@ -10,6 +10,7 @@ import { RequestDto } from '@desk2desk/shared';
 import { apiGet } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { RequestRow } from '@/components/RequestRow';
+import { Loader } from '@/components/Logo';
 
 function Queue({
   icon: Icon,
@@ -81,7 +82,7 @@ export function SupporterDashboardPage() {
   }, []);
 
   if (loading) {
-    return <p className="text-muted-foreground">Loading…</p>;
+    return <Loader />;
   }
 
   return (

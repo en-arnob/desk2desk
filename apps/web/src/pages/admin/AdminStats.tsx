@@ -17,6 +17,7 @@ import {
   STATUS_META,
   formatDuration,
 } from '@/components/StatsUI';
+import { Loader } from '@/components/Logo';
 
 export function AdminStatsPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -29,7 +30,7 @@ export function AdminStatsPage() {
   }, []);
 
   if (loading || !stats) {
-    return <p className="text-muted-foreground">Loading…</p>;
+    return <Loader />;
   }
 
   const admin = stats.admin;
