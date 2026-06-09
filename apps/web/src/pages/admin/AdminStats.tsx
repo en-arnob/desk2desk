@@ -1,23 +1,17 @@
 import { useEffect, useState } from 'react';
-import {
-  AlarmClock,
-  CheckCircle2,
-  FolderKanban,
-  Layers,
-  Timer,
-  TrendingUp,
-  Users,
-} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { FolderKanban, Layers, Users } from 'lucide-react';
 import { DashboardStats, RequestStatus } from '@desk2desk/shared';
 import { apiGet } from '@/lib/api';
 import {
   BarRow,
+  MiniStat,
   Panel,
-  StatCard,
   STATUS_META,
   formatDuration,
 } from '@/components/StatsUI';
 import { Loader } from '@/components/Logo';
+import { Button } from '@/components/ui/button';
 
 export function AdminStatsPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -35,9 +29,7 @@ export function AdminStatsPage() {
 
   const admin = stats.admin;
   if (!admin) {
-    return (
-      <p className="text-muted-foreground">No statistics available.</p>
-    );
+    return <p className="text-muted-foreground">No statistics available.</p>;
   }
 
   const statusMax = Math.max(1, ...Object.values(admin.byStatus));
@@ -48,58 +40,40 @@ export function AdminStatsPage() {
       <div>
         <h1 className="text-2xl font-semibold">Statistics</h1>
         <p className="text-sm text-muted-foreground">
-          Organization-wide support activity and provider workload.
+          Organization-wide support activity.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          icon={Layers}
-          label="Total requests"
-          value={admin.totalRequests}
-          brand
-        />
-        <StatCard
-          icon={AlarmClock}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <MiniStat label="Total requests" value={admin.totalRequests} accent />
+        <MiniStat
           label="Open backlog"
           value={admin.openBacklog}
           sub={`${admin.unassignedOpen} unassigned`}
         />
-        <StatCard
-          icon={Timer}
-          label="Avg response"
-          value={formatDuration(admin.avgResponseMinutes)}
-          sub="Created → picked up"
-        />
-        <StatCard
-          icon={Timer}
-          label="Avg resolution"
-          value={formatDuration(admin.avgResolutionMinutes)}
-          sub="Picked up → resolved"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          icon={TrendingUp}
-          label="Created today"
-          value={admin.createdToday}
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Created this week"
-          value={admin.createdThisWeek}
-        />
-        <StatCard
-          icon={CheckCircle2}
+        <MiniStat
           label="Resolved + Closed"
           value={admin.byStatus.RESOLVED + admin.byStatus.CLOSED}
         />
-        <StatCard
-          icon={Users}
+        <MiniStat
+          label="Avg response"
+          value={formatDuration(admin.avgResponseMinutes)}
+        />
+        <MiniStat
+          label="Avg resolution"
+          value={formatDuration(admin.avgResolutionMinutes)}
+        />
+        <MiniStat
           label="Active providers"
           value={admin.activeProviders}
         />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <MiniStat label="Created today" value={admin.createdToday} />
+        <MiniStat label="Created this week" value={admin.createdThisWeek} />
+        <MiniStat label="In progress" value={admin.byStatus.IN_PROGRESS} />
+        <MiniStat label="Open" value={admin.byStatus.OPEN} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -136,43 +110,22 @@ export function AdminStatsPage() {
         </Panel>
       </div>
 
-      <Panel title="Provider workload" icon={Users}>
-        {admin.topProviders.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No providers have handled requests yet.
-          </p>
-        ) : (
-          <div className="overflow-hidden rounded-lg border">
-            <table className="w-full text-sm">
-              <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-2 font-medium">Provider</th>
-                  <th className="px-4 py-2 text-right font-medium">Active</th>
-                  <th className="px-4 py-2 text-right font-medium">Handled</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {admin.topProviders.map((p) => (
-                  <tr key={p.id}>
-                    <td className="px-4 py-2.5">
-                      <span className="font-medium">{p.name}</span>{' '}
-                      <span className="text-xs text-muted-foreground">
-                        #{p.id}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">
-                      {p.active}
-                    </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">
-                      {p.handled}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="flex items-center justify-between rounded-xl border bg-card p-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Users className="h-5 w-5" />
+          </span>
+          <div>
+            <h3 className="font-semibold">Provider workload</h3>
+            <p className="text-sm text-muted-foreground">
+              Per-provider activity with date ranges and filters.
+            </p>
           </div>
-        )}
-      </Panel>
+        </div>
+        <Button asChild variant="outline">
+          <Link to="/admin/workload">View workload →</Link>
+        </Button>
+      </div>
     </div>
   );
 }

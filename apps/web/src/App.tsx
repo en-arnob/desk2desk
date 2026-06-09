@@ -10,6 +10,7 @@ import { RequestDetailPage } from './pages/RequestDetail';
 import { SupporterDashboardPage } from './pages/SupporterDashboard';
 import { SupportHistoryPage } from './pages/SupportHistory';
 import { AdminStatsPage } from './pages/admin/AdminStats';
+import { AdminWorkloadPage } from './pages/admin/AdminWorkload';
 import { AdminUsersPage } from './pages/admin/AdminUsers';
 import { AdminCategoriesPage } from './pages/admin/AdminCategories';
 import { AdminDepartmentsPage } from './pages/admin/AdminDepartments';
@@ -86,6 +87,14 @@ export function App() {
           element={
             <Protected roles={[Role.ADMIN]}>
               <AdminStatsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="admin/workload"
+          element={
+            <Protected roles={[Role.ADMIN]}>
+              <AdminWorkloadPage />
             </Protected>
           }
         />

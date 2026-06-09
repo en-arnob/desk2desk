@@ -26,6 +26,23 @@
   border-color: var(--color-border);
 }
 
+/* Date inputs: pin the calendar icon to the field's right edge. */
+input[type='date'] {
+  position: relative;
+}
+input[type='date']::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 50%;
+  right: 0.6rem;
+  transform: translateY(-50%);
+  margin: 0;
+  cursor: pointer;
+  opacity: 0.6;
+}
+input[type='date']::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
 body {
   margin: 0;
   background-color: var(--color-background);

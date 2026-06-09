@@ -11,6 +11,16 @@ const STATUS_STYLES: Record<RequestStatus, string> = {
   [RequestStatus.CANCELLED]: 'bg-rose-100 text-rose-700',
 };
 
+/** Solid status colors, for accent bars and timeline dots. */
+export const STATUS_ACCENT: Record<RequestStatus, string> = {
+  [RequestStatus.OPEN]: 'bg-blue-500',
+  [RequestStatus.IN_PROGRESS]: 'bg-indigo-500',
+  [RequestStatus.RESOLVED]: 'bg-emerald-500',
+  [RequestStatus.CLOSED]: 'bg-gray-400',
+  [RequestStatus.REOPENED]: 'bg-orange-500',
+  [RequestStatus.CANCELLED]: 'bg-rose-500',
+};
+
 const PRIORITY_STYLES: Record<Priority, string> = {
   [Priority.LOW]: 'bg-slate-100 text-slate-600',
   [Priority.MEDIUM]: 'bg-sky-100 text-sky-700',

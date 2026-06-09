@@ -14,7 +14,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PriorityBadge, StatusBadge } from '@/components/StatusBadge';
 import { Loader } from '@/components/Logo';
-import { ArrowLeft } from 'lucide-react';
+import {
+  ArrowLeft,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  CheckCheck,
+  PlayCircle,
+  UserCheck,
+  UserRound,
+} from 'lucide-react';
 
 interface Action {
   label: string;
@@ -73,7 +82,10 @@ function actionsFor(req: RequestDto, user: UserDto): Action[] {
 }
 
 function fmt(iso: string) {
-  return new Date(iso).toLocaleString();
+  return new Date(iso).toLocaleString([], {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
 }
 
 export function RequestDetailPage() {
@@ -248,25 +260,47 @@ export function RequestDetailPage() {
             <CardHeader>
               <CardTitle className="text-base">Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <Detail label="Requester" value={req.requester.name} />
+            <CardContent className="space-y-2.5 text-xs">
               <Detail
+                icon={UserRound}
+                label="Requester"
+                value={req.requester.name}
+              />
+              <Detail
+                icon={Building2}
                 label="Department"
                 value={req.requester.department?.name ?? '—'}
               />
               <Detail
+                icon={UserCheck}
                 label="Assigned to"
                 value={req.assignee?.name ?? 'Unassigned'}
               />
-              <Detail label="Created" value={fmt(req.createdAt)} />
+              <Detail
+                icon={CalendarDays}
+                label="Created"
+                value={fmt(req.createdAt)}
+              />
               {req.claimedAt && (
-                <Detail label="Started" value={fmt(req.claimedAt)} />
+                <Detail
+                  icon={PlayCircle}
+                  label="Started"
+                  value={fmt(req.claimedAt)}
+                />
               )}
               {req.resolvedAt && (
-                <Detail label="Resolved" value={fmt(req.resolvedAt)} />
+                <Detail
+                  icon={CheckCircle2}
+                  label="Resolved"
+                  value={fmt(req.resolvedAt)}
+                />
               )}
               {req.closedAt && (
-                <Detail label="Closed" value={fmt(req.closedAt)} />
+                <Detail
+                  icon={CheckCheck}
+                  label="Closed"
+                  value={fmt(req.closedAt)}
+                />
               )}
             </CardContent>
           </Card>
@@ -304,11 +338,20 @@ export function RequestDetailPage() {
   );
 }
 
-function Detail({ label, value }: { label: string; value: string }) {
+function Detail({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof UserRound;
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="flex justify-between gap-2">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium">{value}</span>
+    <div className="flex items-center gap-2">
+      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <span className="ml-auto text-right font-medium">{value}</span>
     </div>
   );
 }

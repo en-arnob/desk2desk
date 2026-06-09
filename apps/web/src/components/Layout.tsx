@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
   Building2,
+  Gauge,
   History,
   Inbox,
   LayoutDashboard,
@@ -48,6 +49,7 @@ const SECTIONS: NavSection[] = [
     roles: [Role.ADMIN],
     items: [
       { to: '/admin/stats', label: 'Statistics', icon: BarChart3 },
+      { to: '/admin/workload', label: 'Workload', icon: Gauge },
       { to: '/admin/users', label: 'Users', icon: Users },
       { to: '/admin/categories', label: 'Categories', icon: Tags },
       { to: '/admin/departments', label: 'Departments', icon: Building2 },

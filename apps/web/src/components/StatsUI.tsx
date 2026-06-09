@@ -60,6 +60,34 @@ export function StatCard({
   );
 }
 
+/** Compact, low-chrome stat tile for dense summary rows. */
+export function MiniStat({
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-lg border bg-card px-4 py-3">
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      <div
+        className={cn(
+          'mt-1 text-xl font-semibold tabular-nums leading-none',
+          accent && 'text-primary',
+        )}
+      >
+        {value}
+      </div>
+      {sub && <div className="mt-1 text-[11px] text-muted-foreground">{sub}</div>}
+    </div>
+  );
+}
+
 export function Panel({
   title,
   icon: Icon,
