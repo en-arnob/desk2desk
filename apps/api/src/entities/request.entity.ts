@@ -12,6 +12,7 @@ import { User } from './user.entity';
 import { Category } from './category.entity';
 import { RequestComment } from './request-comment.entity';
 import { StatusHistory } from './status-history.entity';
+import { WorkAttachment } from './work-attachment.entity';
 
 @Entity()
 export class Request extends BaseEntity {
@@ -50,4 +51,7 @@ export class Request extends BaseEntity {
 
   @OneToMany(() => StatusHistory, (h) => h.request)
   history = new Collection<StatusHistory>(this);
+
+  @OneToMany(() => WorkAttachment, (a) => a.request)
+  attachments = new Collection<WorkAttachment>(this);
 }

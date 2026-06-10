@@ -6,8 +6,13 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { Role } from '@desk2desk/shared';
 import { RequestsService } from './requests.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -20,6 +25,7 @@ import {
   CreateRequestDto,
   ReassignDto,
 } from './dto/request.dto';
+import { uploadOptions } from './attachment.util';
 
 @Controller('requests')
 export class RequestsController {
@@ -106,6 +112,33 @@ export class RequestsController {
     @Body() dto: CreateCommentDto,
   ) {
     return this.requestsService.addComment(id, user, dto);
+  }
+
+  @Post(':id/attachments')
+  @UseInterceptors(FileInterceptor('file', uploadOptions))
+  addAttachment(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: User,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.requestsService.addAttachment(id, user, file);
+  }
+
+  @Get(':id/attachments/:attachmentId/download')
+  async downloadAttachment(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('attachmentId', ParseIntPipe) attachmentId: number,
+    @CurrentUser() user: User,
+    @Res() res: Response,
+  ) {
+    const { absPath, fileName, mimeType } =
+      await this.requestsService.getAttachmentForDownload(
+        id,
+        attachmentId,
+        user,
+      );
+    res.setHeader('Content-Type', mimeType);
+    res.download(absPath, fileName);
   }
 
   @Post(':id/reassign')

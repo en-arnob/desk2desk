@@ -10,3 +10,4 @@ coverage/
 .vite/
 temp/
 *.tsbuildinfo
+uploads/

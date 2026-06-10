@@ -9,6 +9,7 @@ import {
   RequestComment,
   StatusHistory,
   User,
+  WorkAttachment,
 } from './entities';
 
 dotenv.config();
@@ -27,6 +28,7 @@ export default defineConfig({
     Request,
     RequestComment,
     StatusHistory,
+    WorkAttachment,
   ],
   migrations: {
     path: './src/migrations',

@@ -8,6 +8,9 @@ import {
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { EntityManager } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { DashboardStats, RequestStatus, Role } from '@desk2desk/shared';
 import {
   Category,
@@ -15,13 +18,26 @@ import {
   RequestComment,
   StatusHistory,
   User,
+  WorkAttachment,
 } from '../entities';
-import { serializeComment, serializeRequest } from '../common/serializers';
+import {
+  serializeAttachment,
+  serializeComment,
+  serializeRequest,
+} from '../common/serializers';
 import {
   CreateCommentDto,
   CreateRequestDto,
   ReassignDto,
 } from './dto/request.dto';
+import { buildStoredPath, uploadBaseDir } from './attachment.util';
+
+interface UploadedFile {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
 
 @Injectable()
 export class RequestsService {
@@ -32,6 +48,8 @@ export class RequestsService {
     private readonly catRepo: EntityRepository<Category>,
     @InjectRepository(User)
     private readonly userRepo: EntityRepository<User>,
+    @InjectRepository(WorkAttachment)
+    private readonly attachmentRepo: EntityRepository<WorkAttachment>,
     private readonly em: EntityManager,
   ) {}
 
@@ -244,6 +262,7 @@ export class RequestsService {
     const request = await this.loadRequest(id, [
       'comments',
       'history',
+      'attachments',
       'requester.department',
       'assignee.department',
     ]);
@@ -409,6 +428,62 @@ export class RequestsService {
     });
     await this.em.persistAndFlush(comment);
     return serializeComment(comment);
+  }
+
+  // ---- Attachments ----
+  async addAttachment(id: number, user: User, file?: UploadedFile) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    const request = await this.loadRequest(id, ['requester.department']);
+    await this.assertCanView(request, user);
+
+    const ext = path.extname(file.originalname).toLowerCase();
+    const storedName = `${randomUUID()}${ext}`;
+    const relPath = buildStoredPath(
+      request.requester.department?.name,
+      request.createdAt,
+      storedName,
+    );
+    const absPath = path.join(uploadBaseDir(), relPath);
+    await fs.mkdir(path.dirname(absPath), { recursive: true });
+    await fs.writeFile(absPath, file.buffer);
+
+    const attachment = this.em.create(WorkAttachment, {
+      request,
+      uploader: user,
+      fileName: file.originalname,
+      storedPath: relPath,
+      mimeType: file.mimetype,
+      fileSize: file.size,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    await this.em.persistAndFlush(attachment);
+    return serializeAttachment(attachment);
+  }
+
+  async getAttachmentForDownload(
+    id: number,
+    attachmentId: number,
+    user: User,
+  ) {
+    const attachment = await this.attachmentRepo.findOne(
+      { id: attachmentId, request: id },
+      { populate: ['request'] },
+    );
+    if (!attachment) throw new NotFoundException('Attachment not found');
+    await this.assertCanView(attachment.request, user);
+
+    const absPath = path.join(uploadBaseDir(), attachment.storedPath);
+    try {
+      await fs.access(absPath);
+    } catch {
+      throw new NotFoundException('File is missing on the server');
+    }
+    return {
+      absPath,
+      fileName: attachment.fileName,
+      mimeType: attachment.mimeType,
+    };
   }
 
   // ---- Helpers ----

@@ -6,6 +6,7 @@ import {
   RequestComment,
   StatusHistory,
   User,
+  WorkAttachment,
 } from '../entities';
 import { RequestsService } from './requests.service';
 import { RequestsController } from './requests.controller';
@@ -18,6 +19,7 @@ import { RequestsController } from './requests.controller';
       StatusHistory,
       Category,
       User,
+      WorkAttachment,
     ]),
   ],
   controllers: [RequestsController],

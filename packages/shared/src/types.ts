@@ -32,6 +32,15 @@ export interface CommentDto {
   createdAt: string;
 }
 
+export interface AttachmentDto {
+  id: number;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  uploader: UserDto;
+  createdAt: string;
+}
+
 export interface StatusHistoryDto {
   id: number;
   fromStatus: RequestStatus | null;
@@ -55,6 +64,7 @@ export interface RequestDto {
   closedAt?: string | null;
   comments?: CommentDto[];
   history?: StatusHistoryDto[];
+  attachments?: AttachmentDto[];
 }
 
 // ---- Auth ----

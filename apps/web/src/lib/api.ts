@@ -54,3 +54,45 @@ export const apiPut = <T>(path: string, body?: unknown) =>
   api<T>(path, { method: 'PUT', body: body ? JSON.stringify(body) : undefined });
 export const apiDelete = <T>(path: string) =>
   api<T>(path, { method: 'DELETE' });
+
+/** Upload a file via multipart/form-data (browser sets the Content-Type). */
+export async function apiUpload<T>(path: string, file: File): Promise<T> {
+  const token = getToken();
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`/api${path}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: form,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const message =
+      (data as { message?: string | string[] }).message ?? res.statusText;
+    throw new ApiError(
+      res.status,
+      Array.isArray(message) ? message.join(', ') : message,
+    );
+  }
+  return data as T;
+}
+
+/** Download a protected file: fetch with auth, then trigger a browser save. */
+export async function apiDownload(path: string, fileName: string) {
+  const token = getToken();
+  const res = await fetch(`/api${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, 'Download failed');
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}

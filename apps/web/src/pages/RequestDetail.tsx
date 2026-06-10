@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
+  AttachmentDto,
   CommentDto,
   RequestDto,
   RequestStatus,
   UserDto,
 } from '@desk2desk/shared';
-import { ApiError, apiGet, apiPost } from '@/lib/api';
+import { ApiError, apiDownload, apiGet, apiPost, apiUpload } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -20,10 +21,23 @@ import {
   CalendarDays,
   CheckCircle2,
   CheckCheck,
+  Download,
+  FileText,
+  Loader2,
+  Paperclip,
   PlayCircle,
   UserCheck,
   UserRound,
 } from 'lucide-react';
+
+const ACCEPT_TYPES =
+  '.pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.gif,.webp';
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 interface Action {
   label: string;
@@ -96,6 +110,8 @@ export function RequestDetailPage() {
   const [comment, setComment] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(() => {
     if (!id) return;
@@ -142,6 +158,38 @@ export function RequestDetailPage() {
     }
   }
 
+  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const created = await apiUpload<AttachmentDto>(
+        `/requests/${id}/attachments`,
+        file,
+      );
+      setReq((prev) =>
+        prev
+          ? { ...prev, attachments: [...(prev.attachments ?? []), created] }
+          : prev,
+      );
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function download(a: AttachmentDto) {
+    apiDownload(
+      `/requests/${id}/attachments/${a.id}/download`,
+      a.fileName,
+    ).catch((err) =>
+      setError(err instanceof ApiError ? err.message : 'Download failed'),
+    );
+  }
+
   if (!req || !user) {
     return error ? (
       <p className="text-muted-foreground">{error}</p>
@@ -151,6 +199,22 @@ export function RequestDetailPage() {
   }
 
   const actions = actionsFor(req, user);
+
+  type TimelineItem =
+    | { kind: 'comment'; at: string; comment: CommentDto }
+    | { kind: 'attachment'; at: string; attachment: AttachmentDto };
+  const timeline: TimelineItem[] = [
+    ...(req.comments ?? []).map(
+      (c): TimelineItem => ({ kind: 'comment', at: c.createdAt, comment: c }),
+    ),
+    ...(req.attachments ?? []).map(
+      (a): TimelineItem => ({
+        kind: 'attachment',
+        at: a.createdAt,
+        attachment: a,
+      }),
+    ),
+  ].sort((x, y) => x.at.localeCompare(y.at));
 
   return (
     <div className="space-y-6">
@@ -204,40 +268,82 @@ export function RequestDetailPage() {
               <CardTitle className="text-base">Conversation</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {(req.comments ?? []).length === 0 && (
-                <p className="text-sm text-muted-foreground">No messages yet.</p>
+              {timeline.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No messages or files yet.
+                </p>
               )}
-              {(req.comments ?? []).map((c) => {
-                const mine = c.author.id === user.id;
+              {timeline.map((item) => {
+                if (item.kind === 'comment') {
+                  const c = item.comment;
+                  const mine = c.author.id === user.id;
+                  return (
+                    <div
+                      key={`c${c.id}`}
+                      className={cn(
+                        'flex flex-col',
+                        mine ? 'items-end' : 'items-start',
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          'max-w-[85%] rounded-2xl px-3.5 py-2 text-sm',
+                          mine
+                            ? 'rounded-br-sm bg-primary text-primary-foreground'
+                            : 'rounded-bl-sm border bg-secondary/40',
+                        )}
+                      >
+                        {!mine && (
+                          <div className="mb-0.5 text-xs font-medium text-muted-foreground">
+                            {c.author.name}
+                          </div>
+                        )}
+                        <p className="whitespace-pre-wrap">{c.body}</p>
+                      </div>
+                      <span className="mt-1 px-1 text-[11px] text-muted-foreground">
+                        {mine ? 'You' : c.author.name} · {fmt(c.createdAt)}
+                      </span>
+                    </div>
+                  );
+                }
+                const a = item.attachment;
+                const mine = a.uploader.id === user.id;
                 return (
                   <div
-                    key={c.id}
+                    key={`a${a.id}`}
                     className={cn(
                       'flex flex-col',
                       mine ? 'items-end' : 'items-start',
                     )}
                   >
-                    <div
+                    <button
+                      type="button"
+                      onClick={() => download(a)}
                       className={cn(
-                        'max-w-[85%] rounded-2xl px-3.5 py-2 text-sm',
-                        mine
-                          ? 'rounded-br-sm bg-primary text-primary-foreground'
-                          : 'rounded-bl-sm border bg-secondary/40',
+                        'flex max-w-[85%] items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors hover:bg-accent/50',
+                        mine ? 'rounded-br-sm' : 'rounded-bl-sm bg-secondary/40',
                       )}
                     >
-                      {!mine && (
-                        <div className="mb-0.5 text-xs font-medium text-muted-foreground">
-                          {c.author.name}
-                        </div>
-                      )}
-                      <p className="whitespace-pre-wrap">{c.body}</p>
-                    </div>
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <FileText className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium">
+                          {a.fileName}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatFileSize(a.fileSize)} · Download
+                        </span>
+                      </span>
+                      <Download className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    </button>
                     <span className="mt-1 px-1 text-[11px] text-muted-foreground">
-                      {mine ? 'You' : c.author.name} · {fmt(c.createdAt)}
+                      {mine ? 'You' : a.uploader.name} · {fmt(a.createdAt)}
                     </span>
                   </div>
                 );
               })}
+
               <form onSubmit={submitComment} className="space-y-2 pt-2">
                 <Textarea
                   value={comment}
@@ -245,11 +351,39 @@ export function RequestDetailPage() {
                   placeholder="Write a message…"
                   rows={3}
                 />
-                <div className="flex justify-end">
-                  <Button type="submit" size="sm" disabled={busy || !comment.trim()}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ACCEPT_TYPES}
+                  className="hidden"
+                  onChange={onFileChange}
+                />
+                <div className="flex items-center justify-between">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Paperclip className="h-4 w-4" />
+                    )}
+                    {uploading ? 'Uploading…' : 'Attach file'}
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={busy || !comment.trim()}
+                  >
                     Send
                   </Button>
                 </div>
+                <p className="text-[11px] text-muted-foreground">
+                  PDF, Word, Excel, CSV or images · up to 15 MB
+                </p>
               </form>
             </CardContent>
           </Card>

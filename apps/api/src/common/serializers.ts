@@ -1,4 +1,5 @@
 import {
+  AttachmentDto,
   CategoryDto,
   CommentDto,
   DepartmentDto,
@@ -13,6 +14,7 @@ import {
   RequestComment,
   StatusHistory,
   User,
+  WorkAttachment,
 } from '../entities';
 
 export function serializeDepartment(d?: Department | null): DepartmentDto | null {
@@ -55,6 +57,17 @@ export function serializeComment(c: RequestComment): CommentDto {
   };
 }
 
+export function serializeAttachment(a: WorkAttachment): AttachmentDto {
+  return {
+    id: a.id,
+    fileName: a.fileName,
+    mimeType: a.mimeType,
+    fileSize: a.fileSize,
+    uploader: serializeUser(a.uploader),
+    createdAt: a.createdAt.toISOString(),
+  };
+}
+
 export function serializeHistory(h: StatusHistory): StatusHistoryDto {
   return {
     id: h.id,
@@ -86,6 +99,9 @@ export function serializeRequest(r: Request, detailed = false): RequestDto {
     }
     if (r.history.isInitialized()) {
       dto.history = r.history.getItems().map(serializeHistory);
+    }
+    if (r.attachments.isInitialized()) {
+      dto.attachments = r.attachments.getItems().map(serializeAttachment);
     }
   }
   return dto;
