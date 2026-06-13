@@ -25,6 +25,17 @@ export enum Priority {
   URGENT = 'URGENT',
 }
 
+export enum NotificationType {
+  NEW_REQUEST = 'NEW_REQUEST',
+  CLAIMED = 'CLAIMED',
+  COMMENT = 'COMMENT',
+  ATTACHMENT = 'ATTACHMENT',
+  RESOLVED = 'RESOLVED',
+  CLOSED = 'CLOSED',
+  REOPENED = 'REOPENED',
+  REASSIGNED = 'REASSIGNED',
+}
+
 /** Statuses where a request is still considered "active" / open work. */
 export const ACTIVE_STATUSES: RequestStatus[] = [
   RequestStatus.OPEN,

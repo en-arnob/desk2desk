@@ -16,6 +16,7 @@ import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { BrandLockup } from './Logo';
+import { NotificationBell } from './NotificationBell';
 
 interface NavItem {
   to: string;
@@ -78,14 +79,12 @@ export function Layout() {
 
   const isSupportPerson = !!user?.isProvider;
 
-  // Highlight the most specific nav item for the current path. A child URL
-  // with no nav entry of its own (e.g. /requests/1) falls back to its parent
-  // (/requests) — whichever item's `to` is the longest matching prefix wins.
-  const activeTo = SECTIONS.flatMap((s) => s.items)
-    .filter(
-      (it) => pathname === it.to || pathname.startsWith(`${it.to}/`),
-    )
-    .sort((a, b) => b.to.length - a.to.length)[0]?.to;
+  // Highlight only the nav item whose path exactly matches the current URL.
+  // Detail views like /requests/:id have no nav entry, so nothing is
+  // highlighted there — they aren't "My Requests".
+  const activeTo = SECTIONS.flatMap((s) => s.items).find(
+    (it) => pathname === it.to,
+  )?.to;
 
   return (
     <div className="flex min-h-screen bg-secondary/30">
@@ -136,6 +135,7 @@ export function Layout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-end border-b bg-card px-8">
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <div className="text-right">
               <div className="text-sm font-medium leading-tight">
                 {user?.name}

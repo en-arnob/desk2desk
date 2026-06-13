@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   CheckCircle2,
   Coffee,
@@ -8,18 +8,11 @@ import {
 } from 'lucide-react';
 import { RequestDto } from '@desk2desk/shared';
 import { apiGet } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
+import { useRealtime } from '@/lib/realtime';
 import { RequestRow } from '@/components/RequestRow';
 import { Loader } from '@/components/Logo';
 import { Card } from '@/components/ui/card';
-
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
-}
 
 function Queue({
   icon: Icon,
@@ -86,23 +79,34 @@ function Queue({
 }
 
 export function SupporterDashboardPage() {
-  const { user } = useAuth();
+  const { subscribe } = useRealtime();
   const [available, setAvailable] = useState<RequestDto[]>([]);
   const [assigned, setAssigned] = useState<RequestDto[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([
+  const reload = useCallback(() => {
+    return Promise.all([
       apiGet<RequestDto[]>('/requests/available').then(setAvailable),
       apiGet<RequestDto[]>('/requests/assigned').then(setAssigned),
-    ]).finally(() => setLoading(false));
+    ]);
   }, []);
+
+  useEffect(() => {
+    reload().finally(() => setLoading(false));
+  }, [reload]);
+
+  // Live-refresh the queues whenever any request changes.
+  useEffect(
+    () =>
+      subscribe((e) => {
+        if (e.kind.startsWith('request.')) reload();
+      }),
+    [subscribe, reload],
+  );
 
   if (loading) {
     return <Loader />;
   }
-
-  const firstName = user?.name?.split(' ')[0] ?? '';
 
   return (
     <div className="space-y-6">
@@ -110,9 +114,7 @@ export function SupporterDashboardPage() {
         <div>
           <h1 className="text-2xl font-semibold">Support Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            {greeting()}
-            {firstName ? `, ${firstName}` : ''} — claim new requests and keep
-            track of what you’re working on.
+            Claim new requests and keep track of what you’re working on.
           </p>
         </div>
         <div className="flex items-center gap-2">

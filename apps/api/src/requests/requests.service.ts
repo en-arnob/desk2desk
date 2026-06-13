@@ -8,6 +8,7 @@ import {
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { EntityManager } from '@mikro-orm/core';
 import { InjectRepository } from '@mikro-orm/nestjs';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -31,6 +32,11 @@ import {
   ReassignDto,
 } from './dto/request.dto';
 import { buildStoredPath, uploadBaseDir } from './attachment.util';
+import {
+  REQUEST_ACTIVITY,
+  RequestAction,
+  RequestActivityPayload,
+} from '../realtime/request-activity';
 
 interface UploadedFile {
   originalname: string;
@@ -51,7 +57,30 @@ export class RequestsService {
     @InjectRepository(WorkAttachment)
     private readonly attachmentRepo: EntityRepository<WorkAttachment>,
     private readonly em: EntityManager,
+    private readonly events: EventEmitter2,
   ) {}
+
+  /** Broadcast a request mutation so listeners can notify the right people. */
+  private emitActivity(
+    action: RequestAction,
+    request: Request,
+    actor?: User,
+    extra?: string,
+  ) {
+    const payload: RequestActivityPayload = {
+      action,
+      requestId: request.id,
+      title: request.title,
+      categoryId: request.category.id,
+      categoryName: request.category.name,
+      requesterId: request.requester.id,
+      assigneeId: request.assignee?.id ?? null,
+      actorId: actor?.id ?? '',
+      actorName: actor?.name ?? 'Admin',
+      extra,
+    };
+    this.events.emit(REQUEST_ACTIVITY, payload);
+  }
 
   // ---- Create ----
   async create(requester: User, dto: CreateRequestDto) {
@@ -73,6 +102,7 @@ export class RequestsService {
     });
     await this.em.persistAndFlush(request);
     await this.recordHistory(request, null, RequestStatus.OPEN, requester);
+    this.emitActivity('created', request, requester);
     return serializeRequest(request);
   }
 
@@ -353,6 +383,7 @@ export class RequestsService {
       RequestStatus.IN_PROGRESS,
       user,
     );
+    this.emitActivity('claimed', fresh, user);
     return serializeRequest(fresh);
   }
 
@@ -364,7 +395,9 @@ export class RequestsService {
       RequestStatus.REOPENED,
     ]);
     request.resolvedAt = new Date();
-    return this.transition(request, RequestStatus.RESOLVED, user);
+    const result = await this.transition(request, RequestStatus.RESOLVED, user);
+    this.emitActivity('resolved', request, user);
+    return result;
   }
 
   async confirmClose(id: number, user: User) {
@@ -372,7 +405,9 @@ export class RequestsService {
     this.assertRequester(request, user);
     this.assertStatus(request, [RequestStatus.RESOLVED]);
     request.closedAt = new Date();
-    return this.transition(request, RequestStatus.CLOSED, user);
+    const result = await this.transition(request, RequestStatus.CLOSED, user);
+    this.emitActivity('closed', request, user);
+    return result;
   }
 
   async reopen(id: number, user: User) {
@@ -381,14 +416,22 @@ export class RequestsService {
     this.assertStatus(request, [RequestStatus.RESOLVED, RequestStatus.CLOSED]);
     request.closedAt = undefined;
     request.resolvedAt = undefined;
-    return this.transition(request, RequestStatus.REOPENED, user);
+    const result = await this.transition(request, RequestStatus.REOPENED, user);
+    this.emitActivity('reopened', request, user);
+    return result;
   }
 
   async cancel(id: number, user: User) {
     const request = await this.loadRequest(id);
     this.assertRequester(request, user);
     this.assertStatus(request, [RequestStatus.OPEN, RequestStatus.REOPENED]);
-    return this.transition(request, RequestStatus.CANCELLED, user);
+    const result = await this.transition(
+      request,
+      RequestStatus.CANCELLED,
+      user,
+    );
+    this.emitActivity('cancelled', request, user);
+    return result;
   }
 
   /** Admin override: reassign to a (privileged) supporter. */
@@ -409,9 +452,16 @@ export class RequestsService {
       request.status === RequestStatus.REOPENED
     ) {
       request.claimedAt = new Date();
-      return this.transition(request, RequestStatus.IN_PROGRESS, provider);
+      const result = await this.transition(
+        request,
+        RequestStatus.IN_PROGRESS,
+        provider,
+      );
+      this.emitActivity('reassigned', request);
+      return result;
     }
     await this.em.flush();
+    this.emitActivity('reassigned', request);
     return serializeRequest(request);
   }
 
@@ -427,6 +477,12 @@ export class RequestsService {
       updatedAt: new Date(),
     });
     await this.em.persistAndFlush(comment);
+    this.emitActivity(
+      'commented',
+      request,
+      user,
+      dto.body.slice(0, 100),
+    );
     return serializeComment(comment);
   }
 
@@ -458,6 +514,7 @@ export class RequestsService {
       updatedAt: new Date(),
     });
     await this.em.persistAndFlush(attachment);
+    this.emitActivity('attached', request, user, file.originalname);
     return serializeAttachment(attachment);
   }
 

@@ -6,3 +6,4 @@ export * from './request.entity';
 export * from './request-comment.entity';
 export * from './status-history.entity';
 export * from './work-attachment.entity';
+export * from './notification.entity';

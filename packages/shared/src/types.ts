@@ -1,4 +1,4 @@
-import { Priority, RequestStatus, Role } from './enums';
+import { NotificationType, Priority, RequestStatus, Role } from './enums';
 
 export interface DepartmentDto {
   id: number;
@@ -118,6 +118,26 @@ export interface AdminStats {
 export interface DashboardStats {
   personal: PersonalStats;
   admin?: AdminStats;
+}
+
+// ---- Notifications & realtime ----
+export interface NotificationDto {
+  id: number;
+  type: NotificationType;
+  title: string;
+  body: string;
+  requestId: number | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+/** A message pushed down the SSE stream. */
+export interface RealtimeEvent {
+  /** e.g. "request.created", "request.commented", or "ping". */
+  kind: string;
+  requestId?: number | null;
+  /** Present when this event should raise a bell/toast for the user. */
+  notification?: NotificationDto;
 }
 
 // ---- Request payloads ----

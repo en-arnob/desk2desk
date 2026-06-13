@@ -5,6 +5,7 @@ import {
   BaseEntity,
   Category,
   Department,
+  Notification,
   Request,
   RequestComment,
   StatusHistory,
@@ -29,6 +30,7 @@ export default defineConfig({
     RequestComment,
     StatusHistory,
     WorkAttachment,
+    Notification,
   ],
   migrations: {
     path: './src/migrations',

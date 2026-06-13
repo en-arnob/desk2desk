@@ -9,6 +9,7 @@ import {
 } from '@desk2desk/shared';
 import { ApiError, apiDownload, apiGet, apiPost, apiUpload } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useRealtime } from '@/lib/realtime';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -105,6 +106,7 @@ function fmt(iso: string) {
 export function RequestDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { subscribe } = useRealtime();
   const navigate = useNavigate();
   const [req, setReq] = useState<RequestDto | null>(null);
   const [comment, setComment] = useState('');
@@ -125,6 +127,15 @@ export function RequestDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Live-refresh this request when a realtime event targets it.
+  useEffect(
+    () =>
+      subscribe((e) => {
+        if (e.requestId != null && String(e.requestId) === id) load();
+      }),
+    [subscribe, id, load],
+  );
 
   async function runAction(endpoint: string) {
     setError(null);
